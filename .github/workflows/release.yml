@@ -48,8 +48,17 @@ jobs:
           cache-targets: "true"
           cache-on-failure: "false"
 
-      - name: Run rustfmt
-        run: cargo fmt --all -- --check
+      - name: Format code with rustfmt
+        run: cargo fmt --all
+
+      - name: Verify formatting
+        run: |
+          if [[ -n $(git diff --name-only) ]]; then
+            echo "::error::Code formatting issues detected. Please run 'cargo fmt --all' before creating a release."
+            echo "Files with formatting issues:"
+            git diff --name-only
+            exit 1
+          fi
 
       - name: Run clippy
         run: cargo clippy --all-features --all-targets -- -D warnings

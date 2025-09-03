@@ -7,9 +7,9 @@ use diesel::sql_types::*;
 // Time bucket functions for aggregating time-series data
 define_sql_function! {
     /// Groups timestamps into buckets of a specified interval.
-    /// 
+    ///
     /// This is one of TimescaleDB's most important functions for time-series aggregation.
-    /// 
+    ///
     /// # Example SQL
     /// ```sql
     /// SELECT time_bucket('1 hour', timestamp_col), avg(value)
@@ -38,8 +38,8 @@ define_sql_function! {
 define_sql_function! {
     /// Creates a hypertable with additional options.
     fn create_hypertable_with_options(
-        relation: Text, 
-        time_column_name: Text, 
+        relation: Text,
+        time_column_name: Text,
         partitioning_column: Nullable<Text>,
         number_partitions: Nullable<Integer>,
         chunk_time_interval: Nullable<Interval>
@@ -105,10 +105,10 @@ define_sql_function! {
 /// interacting with the database more convenient.
 pub mod utilities {
     use super::*;
-    use diesel::prelude::*;
+    use crate::schema::TimeInterval;
     use diesel::expression::SqlLiteral;
-    use crate::schema::{TimeInterval, ValidationError};
-    
+    use diesel::prelude::*;
+
     /// Creates a `time_bucket` SQL expression for aggregating timestamps into
     /// buckets of the specified interval.
     ///
@@ -159,13 +159,19 @@ pub mod utilities {
     ///
     /// This function relies on the `diesel` crate for SQL generation and the
     /// appropriate traits and types being in scope.
-    pub fn time_bucket_expr<T>(interval: TimeInterval, timestamp_expr: T) -> time_bucket<SqlLiteral<Interval>, T> 
+    pub fn time_bucket_expr<T>(
+        interval: TimeInterval,
+        timestamp_expr: T,
+    ) -> time_bucket<SqlLiteral<Interval>, T>
     where
         T: Expression<SqlType = Timestamptz>,
     {
         time_bucket(
-            diesel::dsl::sql::<Interval>(&format!("INTERVAL '{}'", interval.to_postgres_interval())), 
-            timestamp_expr
+            diesel::dsl::sql::<Interval>(&format!(
+                "INTERVAL '{}'",
+                interval.to_postgres_interval()
+            )),
+            timestamp_expr,
         )
     }
 }

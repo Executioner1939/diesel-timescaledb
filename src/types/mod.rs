@@ -53,14 +53,14 @@ impl FromSql<Timestamptz, Pg> for TimestampTz {
 pub trait TimeDimension {
     /// The SQL type of this time dimension.
     type SqlType;
-    
+
     /// Convert to a value suitable for database operations.
     fn to_sql_value(&self) -> Self::SqlType;
 }
 
 impl TimeDimension for TimestampTz {
     type SqlType = DateTime<Utc>;
-    
+
     fn to_sql_value(&self) -> Self::SqlType {
         self.0
     }
@@ -68,7 +68,7 @@ impl TimeDimension for TimestampTz {
 
 impl TimeDimension for DateTime<Utc> {
     type SqlType = DateTime<Utc>;
-    
+
     fn to_sql_value(&self) -> Self::SqlType {
         *self
     }

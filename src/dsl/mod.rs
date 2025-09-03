@@ -1,40 +1,57 @@
 //! Domain Specific Language (DSL) extensions for TimescaleDB queries.
 
+use crate::schema::{SqlIdentifier, TimeInterval, ValidationError};
+use diesel::expression::AsExpression;
 use diesel::prelude::*;
 use diesel::sql_types::Timestamptz;
-use diesel::expression::AsExpression;
-use crate::schema::{SqlIdentifier, TimeInterval, ValidationError};
 
 /// Extension trait for building time-series queries.
 pub trait TimescaleQueryDsl: Sized {
     /// Add time bucketing to the query with a validated time interval.
-    /// 
+    ///
     /// # Security
     /// Uses validated TimeInterval to prevent SQL injection.
-    fn time_bucket<Expr>(self, time_column: Expr, interval: TimeInterval) -> TimeBucketQuery<Self, Expr>
+    fn time_bucket<Expr>(
+        self,
+        time_column: Expr,
+        interval: TimeInterval,
+    ) -> TimeBucketQuery<Self, Expr>
     where
         Expr: Expression;
-    
+
     /// Add time bucketing to the query with a string interval (legacy API).
-    /// 
-    /// # Security 
+    ///
+    /// # Security
     /// Validates the interval string before using it.
-    /// 
+    ///
     /// # Deprecated
     /// Use `time_bucket` with `TimeInterval` for better type safety.
-    fn time_bucket_str<Expr>(self, time_column: Expr, interval: &str) -> Result<TimeBucketQuery<Self, Expr>, ValidationError>
+    fn time_bucket_str<Expr>(
+        self,
+        time_column: Expr,
+        interval: &str,
+    ) -> Result<TimeBucketQuery<Self, Expr>, ValidationError>
     where
         Expr: Expression;
-    
+
     /// Add a time range filter to the query.
-    fn time_range<Expr, V>(self, time_column: Expr, start: V, end: V) -> TimeRangeQuery<Self, Expr, V>
+    fn time_range<Expr, V>(
+        self,
+        time_column: Expr,
+        start: V,
+        end: V,
+    ) -> TimeRangeQuery<Self, Expr, V>
     where
         Expr: Expression,
         V: AsExpression<Timestamptz>;
 }
 
 impl<T> TimescaleQueryDsl for T {
-    fn time_bucket<Expr>(self, time_column: Expr, interval: TimeInterval) -> TimeBucketQuery<Self, Expr>
+    fn time_bucket<Expr>(
+        self,
+        time_column: Expr,
+        interval: TimeInterval,
+    ) -> TimeBucketQuery<Self, Expr>
     where
         Expr: Expression,
     {
@@ -44,8 +61,12 @@ impl<T> TimescaleQueryDsl for T {
             interval,
         }
     }
-    
-    fn time_bucket_str<Expr>(self, time_column: Expr, interval: &str) -> Result<TimeBucketQuery<Self, Expr>, ValidationError>
+
+    fn time_bucket_str<Expr>(
+        self,
+        time_column: Expr,
+        interval: &str,
+    ) -> Result<TimeBucketQuery<Self, Expr>, ValidationError>
     where
         Expr: Expression,
     {
@@ -56,8 +77,13 @@ impl<T> TimescaleQueryDsl for T {
             interval: validated_interval,
         })
     }
-    
-    fn time_range<Expr, V>(self, time_column: Expr, start: V, end: V) -> TimeRangeQuery<Self, Expr, V>
+
+    fn time_range<Expr, V>(
+        self,
+        time_column: Expr,
+        start: V,
+        end: V,
+    ) -> TimeRangeQuery<Self, Expr, V>
     where
         Expr: Expression,
         V: AsExpression<Timestamptz>,
@@ -84,17 +110,17 @@ impl<Query, TimeColumn> TimeBucketQuery<Query, TimeColumn> {
     pub fn into_inner(self) -> Query {
         self.query
     }
-    
+
     /// Get the time column expression.
     pub fn time_column(&self) -> &TimeColumn {
         &self.time_column
     }
-    
+
     /// Get the interval.
     pub fn interval(&self) -> &TimeInterval {
         &self.interval
     }
-    
+
     /// Get the interval as a PostgreSQL interval string.
     pub fn interval_sql(&self) -> String {
         self.interval.to_postgres_interval()
@@ -115,17 +141,17 @@ impl<Query, TimeColumn, Value> TimeRangeQuery<Query, TimeColumn, Value> {
     pub fn into_inner(self) -> Query {
         self.query
     }
-    
+
     /// Get the time column expression.
     pub fn time_column(&self) -> &TimeColumn {
         &self.time_column
     }
-    
+
     /// Get the start time value.
     pub fn start(&self) -> &Value {
         &self.start
     }
-    
+
     /// Get the end time value.
     pub fn end(&self) -> &Value {
         &self.end
@@ -141,7 +167,7 @@ pub trait TimescaleExecuteDsl<Conn> {
 /// Common time-series query patterns.
 pub mod patterns {
     use super::*;
-    
+
     /// Helper for creating common time-series aggregation queries.
     /// This version ensures type safety and prevents SQL injection.
     pub struct TimeSeriesAggregation {
@@ -150,10 +176,10 @@ pub mod patterns {
         pub value_column: SqlIdentifier,
         pub bucket_interval: TimeInterval,
     }
-    
+
     impl TimeSeriesAggregation {
         /// Create a new time-series aggregation with validated inputs.
-        /// 
+        ///
         /// # Security
         /// All parameters are validated to prevent SQL injection attacks.
         pub fn new(
@@ -169,7 +195,7 @@ pub mod patterns {
                 bucket_interval: TimeInterval::from_string(bucket_interval)?,
             })
         }
-        
+
         /// Create a new time-series aggregation with type-safe inputs.
         pub fn new_typed(
             table_name: SqlIdentifier,
@@ -184,9 +210,9 @@ pub mod patterns {
                 bucket_interval,
             }
         }
-        
+
         /// Build a query string for average aggregation.
-        /// 
+        ///
         /// # Security
         /// All identifiers are properly escaped to prevent SQL injection.
         pub fn avg_query(&self) -> String {
@@ -201,9 +227,9 @@ pub mod patterns {
                 self.table_name.escaped()
             )
         }
-        
+
         /// Build a query string for sum aggregation.
-        /// 
+        ///
         /// # Security
         /// All identifiers are properly escaped to prevent SQL injection.
         pub fn sum_query(&self) -> String {
@@ -218,9 +244,9 @@ pub mod patterns {
                 self.table_name.escaped()
             )
         }
-        
+
         /// Build a query string for count aggregation.
-        /// 
+        ///
         /// # Security
         /// All identifiers are properly escaped to prevent SQL injection.
         pub fn count_query(&self) -> String {
