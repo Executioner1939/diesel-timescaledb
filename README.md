@@ -2,9 +2,9 @@
 
 [![Crates.io](https://img.shields.io/crates/v/diesel-timescaledb.svg)](https://crates.io/crates/diesel-timescaledb)
 [![Documentation](https://docs.rs/diesel-timescaledb/badge.svg)](https://docs.rs/diesel-timescaledb)
-[![License](https://img.shields.io/crates/l/diesel-timescaledb)](https://github.com/hermes-capital-io/hermes-platform)
-[![Build Status](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/hermes-capital-io/hermes-platform)
-[![Minimum rustc version](https://img.shields.io/badge/rustc-1.65+-lightgray.svg)](https://github.com/hermes-capital-io/hermes-platform)
+[![License](https://img.shields.io/crates/l/diesel-timescaledb)](https://github.com/diesel-timescaledb/diesel-timescaledb)
+[![Build Status](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/diesel-timescaledb/diesel-timescaledb)
+[![Minimum rustc version](https://img.shields.io/badge/rustc-1.65+-lightgray.svg)](https://github.com/diesel-timescaledb/diesel-timescaledb)
 [![Diesel Version](https://img.shields.io/badge/diesel-2.1-blue)](https://diesel.rs)
 
 A pure Diesel extension crate that provides comprehensive TimescaleDB functionality for Rust applications. This crate seamlessly integrates TimescaleDB's powerful time-series capabilities with Diesel's type-safe query builder, offering a robust solution for time-series data management.
@@ -360,8 +360,7 @@ Contributions are welcome! Please feel free to submit a Pull Request. For major 
 
 ```bash
 # Clone the repository
-git clone https://github.com/hermes-capital-io/hermes-platform.git
-cd hermes-platform/Crates/diesel-timescaledb
+git clone https://github.com/Executioner1939/diesel-timescaledb.git
 
 # Run tests
 cargo test
@@ -418,9 +417,6 @@ at your option.
 ## Support
 
 For issues and questions:
-- GitHub Issues: [hermes-platform/issues](https://github.com/hermes-capital-io/hermes-platform/issues)
 - Documentation: [docs.rs/diesel-timescaledb](https://docs.rs/diesel-timescaledb)
 
 ---
-
-Part of the [Hermes Platform](https://github.com/hermes-capital-io/hermes-platform) - High-performance financial infrastructure built with Rust.
