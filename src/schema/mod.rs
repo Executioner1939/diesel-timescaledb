@@ -1,46 +1,46 @@
-//!
+//! Schema management for TimescaleDB hypertables and related structures.
 
 use diesel::prelude::*;
 use diesel::sql_types::{Nullable, Text, Timestamptz};
 use std::fmt;
 
-///
+/// A validated SQL identifier that prevents SQL injection attacks.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SqlIdentifier(String);
 
 impl SqlIdentifier {
-    ///
+    /// Create a new validated SQL identifier.
     pub fn new(identifier: &str) -> Result<Self, ValidationError> {
         validate_sql_identifier(identifier)?;
         Ok(SqlIdentifier(identifier.to_string()))
     }
 
-    ///
+    /// Get the escaped identifier suitable for use in SQL queries.
     pub fn escaped(&self) -> String {
         format!("\"{}\"", self.0.replace('"', "\"\""))
     }
 
-    ///
+    /// Get the raw identifier as a string slice.
     pub fn as_str(&self) -> &str {
         &self.0
     }
 }
 
 impl fmt::Display for SqlIdentifier {
-    ///
+    /// Format the identifier for display.
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.escaped())
     }
 }
 
-///
+/// Represents a time interval for TimescaleDB operations.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TimeInterval {
     value: u64,
     unit: TimeUnit,
 }
 
-///
+/// Units of time for intervals.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TimeUnit {
     Microseconds,
@@ -55,12 +55,12 @@ pub enum TimeUnit {
 }
 
 impl TimeInterval {
-    ///
+    /// Create a new time interval.
     pub fn new(value: u64, unit: TimeUnit) -> Self {
         Self { value, unit }
     }
 
-    ///
+    /// Convert to a PostgreSQL interval string.
     pub fn to_postgres_interval(&self) -> String {
         let unit_str = match self.unit {
             TimeUnit::Microseconds => "microseconds",
@@ -76,7 +76,7 @@ impl TimeInterval {
         format!("{} {}", self.value, unit_str)
     }
 
-    ///
+    /// Parse a time interval from a string.
     pub fn from_string(interval: &str) -> Result<Self, ValidationError> {
         validate_interval_string(interval)?;
 
@@ -113,7 +113,7 @@ impl TimeInterval {
     }
 }
 
-///
+/// Validation error types for SQL identifiers and intervals.
 #[derive(Debug, Clone)]
 pub enum ValidationError {
     InvalidIdentifier(String),
@@ -121,7 +121,6 @@ pub enum ValidationError {
 }
 
 impl fmt::Display for ValidationError {
-    ///
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             ValidationError::InvalidIdentifier(msg) => write!(f, "Invalid SQL identifier: {}", msg),
@@ -132,7 +131,7 @@ impl fmt::Display for ValidationError {
 
 impl std::error::Error for ValidationError {}
 
-///
+/// Validate a SQL identifier to prevent SQL injection.
 fn validate_sql_identifier(identifier: &str) -> Result<(), ValidationError> {
     if identifier.is_empty() {
         return Err(ValidationError::InvalidIdentifier(
@@ -203,7 +202,7 @@ fn validate_sql_identifier(identifier: &str) -> Result<(), ValidationError> {
     Ok(())
 }
 
-///
+/// Validate an interval string to prevent SQL injection.
 fn validate_interval_string(interval: &str) -> Result<(), ValidationError> {
     if interval.is_empty() {
         return Err(ValidationError::InvalidInterval(
@@ -230,15 +229,15 @@ fn validate_interval_string(interval: &str) -> Result<(), ValidationError> {
     Ok(())
 }
 
-///
+/// Trait for tables that can be converted to TimescaleDB hypertables.
 pub trait Hypertable {
-    ///
+    /// Name of the table to convert to a hypertable.
     const TABLE_NAME: &'static str;
 
-    ///
+    /// Name of the time column to use for partitioning.
     const TIME_COLUMN: &'static str;
 
-    ///
+    /// Create a hypertable from this table.
     fn create_hypertable(conn: &mut PgConnection) -> QueryResult<()> {
         // These are compile-time constants, so they're safe to use directly
         let query = "SELECT create_hypertable($1, $2);";
@@ -250,7 +249,7 @@ pub trait Hypertable {
         Ok(())
     }
 
-    ///
+    /// Create a hypertable with a specific chunk time interval.
     fn create_hypertable_with_interval(
         conn: &mut PgConnection,
         chunk_time_interval: TimeInterval,
@@ -267,7 +266,7 @@ pub trait Hypertable {
         Ok(())
     }
 
-    ///
+    /// Create a hypertable with a specific chunk time interval from a string.
     fn create_hypertable_with_interval_str(
         conn: &mut PgConnection,
         chunk_time_interval: &str,
@@ -282,7 +281,7 @@ pub trait Hypertable {
         Self::create_hypertable_with_interval(conn, interval)
     }
 
-    ///
+    /// Add a compression policy to the hypertable.
     fn add_compression_policy(
         conn: &mut PgConnection,
         compress_after: TimeInterval,
@@ -298,7 +297,7 @@ pub trait Hypertable {
         Ok(())
     }
 
-    ///
+    /// Add a compression policy from a string interval.
     fn add_compression_policy_str(
         conn: &mut PgConnection,
         compress_after: &str,
@@ -313,7 +312,7 @@ pub trait Hypertable {
         Self::add_compression_policy(conn, interval)
     }
 
-    ///
+    /// Add a retention policy to automatically drop old data.
     fn add_retention_policy(conn: &mut PgConnection, drop_after: TimeInterval) -> QueryResult<()> {
         let query = format!(
             "SELECT add_retention_policy($1, INTERVAL '{}');",
@@ -326,7 +325,7 @@ pub trait Hypertable {
         Ok(())
     }
 
-    ///
+    /// Add a retention policy from a string interval.
     fn add_retention_policy_str(conn: &mut PgConnection, drop_after: &str) -> QueryResult<()> {
         let interval = TimeInterval::from_string(drop_after).map_err(|e| {
             diesel::result::Error::DatabaseError(
@@ -339,7 +338,7 @@ pub trait Hypertable {
     }
 }
 
-///
+/// Macro to implement the Hypertable trait for a table.
 #[macro_export]
 macro_rules! hypertable {
     ($table_name:ident, $time_column:ident) => {
@@ -350,7 +349,7 @@ macro_rules! hypertable {
     };
 }
 
-///
+/// Configuration for continuous aggregates.
 #[derive(Debug, Clone)]
 pub struct ContinuousAggregateConfig {
     pub view_name: String,
@@ -360,7 +359,7 @@ pub struct ContinuousAggregateConfig {
 }
 
 impl ContinuousAggregateConfig {
-    ///
+    /// Create a new continuous aggregate configuration.
     pub fn new(view_name: impl Into<String>, query: impl Into<String>) -> Self {
         Self {
             view_name: view_name.into(),
@@ -370,19 +369,19 @@ impl ContinuousAggregateConfig {
         }
     }
 
-    ///
+    /// Set the refresh lag for the continuous aggregate.
     pub fn with_refresh_lag(mut self, lag: impl Into<String>) -> Self {
         self.refresh_lag = Some(lag.into());
         self
     }
 
-    ///
+    /// Set the refresh interval for the continuous aggregate.
     pub fn with_refresh_interval(mut self, interval: impl Into<String>) -> Self {
         self.refresh_interval = Some(interval.into());
         self
     }
 
-    ///
+    /// Create the continuous aggregate.
     pub fn create(&self, conn: &mut PgConnection) -> QueryResult<()> {
         // Validate the view name
         let view_identifier = SqlIdentifier::new(&self.view_name).map_err(|e| {
@@ -440,11 +439,11 @@ impl ContinuousAggregateConfig {
     }
 }
 
-///
+/// Module for managing TimescaleDB chunks.
 pub mod chunks {
     use super::*;
 
-    ///
+    /// Information about a chunk in a hypertable.
     #[derive(Debug, Clone, QueryableByName)]
     pub struct ChunkInfo {
         #[diesel(sql_type = Text)]
@@ -459,7 +458,7 @@ pub mod chunks {
         pub range_end: Option<chrono::DateTime<chrono::Utc>>,
     }
 
-    ///
+    /// Get information about chunks for a hypertable.
     pub fn get_chunk_info(
         conn: &mut PgConnection,
         table_name: &str,
@@ -481,7 +480,7 @@ pub mod chunks {
         .load::<ChunkInfo>(conn)
     }
 
-    ///
+    /// Drop chunks older than a specified time.
     pub fn drop_old_chunks(
         conn: &mut PgConnection,
         table_name: &str,

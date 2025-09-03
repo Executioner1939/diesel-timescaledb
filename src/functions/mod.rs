@@ -120,11 +120,11 @@ pub mod utilities {
     /// # Parameters
     ///
     /// - `interval`: A `TimeInterval` that specifies the duration of each bucket.
-    ///               This will be converted into a PostgreSQL interval for use
-    ///               in the query.
+    ///   This will be converted into a PostgreSQL interval for use
+    ///   in the query.
     /// - `timestamp_expr`: A timestamp expression of type `T` that will be
-    ///                     bucketed. This expression must have the `Timestamptz`
-    ///                     SQL type.
+    ///   bucketed. This expression must have the `Timestamptz`
+    ///   SQL type.
     ///
     /// # Returns
     ///
